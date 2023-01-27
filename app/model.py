@@ -3,7 +3,7 @@ Inference functions for fine-tuned T5 model inference.
 """
 
 import torch
-from transformers import T5Tokenizer, T5ForConditionalGeneration
+from transformers import T5ForConditionalGeneration, T5Tokenizer
 
 
 def create_inference(model, tokenizer):
