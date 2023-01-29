@@ -23,7 +23,7 @@ def callback(channel, method, properties: BasicProperties, body: str) -> None:
 
 tokenizer = T5Tokenizer.from_pretrained("t5-small", model_max_length=512)
 model = T5ForConditionalGeneration.from_pretrained("t5-small")
-model.load_state_dict(torch.load("./t5_small_ft_22.pth", map_location="cpu"))
+# model.load_state_dict(torch.load("./t5_small_ft_22.pth", map_location="cpu"))
 
 inference = create_inference(model, tokenizer)
 

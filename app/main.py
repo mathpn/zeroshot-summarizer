@@ -11,6 +11,7 @@ from pika import BasicProperties
 from pydantic import BaseModel
 
 from app.bridge import rabbitmq_client, redis_client
+from app.logger import logger
 
 api = FastAPI()
 
@@ -40,6 +41,7 @@ async def classify(body: QueryParams) -> PendingSummarizationDTO:
         body=json.dumps(body.dict()),
         properties=BasicProperties(headers={"inference_id": inference_id}),
     )
+    logger.info(f"added request to queue (uuid {inference_id})")
 
     return PendingSummarizationDTO(inference_id=inference_id)
 
