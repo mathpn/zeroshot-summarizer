@@ -1,7 +1,9 @@
-version: "3.10"
+version: "3.11"
 services:
   redis:
     image: redis:latest
+    networks:
+      - docker_net_1
 
   rabbitmq:
     image: rabbitmq:3.10-management
@@ -10,8 +12,8 @@ services:
       RABBITMQ_DEFAULT_PASS: "my_password"
     ports:
       - "5672:5672"
-    links:
-      - "redis"
+    networks:
+      - docker_net_1
 
   summarizer:
     build: .
@@ -21,8 +23,15 @@ services:
     ports:
       - "8383:8000"
     command: bash start.sh
-    links:
-      - "redis"
-      - "rabbitmq"
+    networks:
+      - docker_net_1
     volumes:
-      - ./data:/home/data
+      - ./models:/home/models
+    depends_on:
+      - rabbitmq
+      - redis
+    restart: on-failure
+
+networks:
+  docker_net_1:
+    name: summarizer-network

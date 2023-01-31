@@ -7,6 +7,8 @@ from transformers import T5ForConditionalGeneration, T5Tokenizer
 
 
 def create_inference(model, tokenizer):
+    model = model.eval()
+
     def inference(
         sequence: str,
         descriptors: list[str],
