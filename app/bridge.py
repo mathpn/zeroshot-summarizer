@@ -6,6 +6,7 @@ import pika
 import redis
 from pika import PlainCredentials
 
+
 # FIXME RabbitMQ connection is being lost in FastAPI
 def create_rabbitmq_client():
     connection = pika.BlockingConnection(
