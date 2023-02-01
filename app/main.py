@@ -7,24 +7,29 @@ import json
 import uuid
 from typing import Union
 
-import pika
+import aio_pika
 from fastapi import FastAPI, Request
 
-from app.bridge import create_rabbitmq_client, create_redis_client
+from app.bridge import create_redis_client
 from app.logger import logger
-from app.models import (PendingSummarizationDTO, QueryParams,
-                        SummarizationResultDTO)
-from app.publisher import RabbitPublisher
+from app.models import PendingSummarizationDTO, QueryParams, SummarizationResultDTO
 
 api = FastAPI()
 
 
 @api.on_event("startup")
-def startup():
-    # api.state.rabbitmq_client = create_rabbitmq_client()
+async def startup():
     api.state.redis_client = create_redis_client()
-    api.state.publisher = RabbitPublisher(create_rabbitmq_client)
-    asyncio.create_task(api.state.publisher.run())
+    loop = asyncio.get_event_loop()
+    api.state.rabbit_conn = await aio_pika.connect(
+        host="rabbitmq",
+        # host="localhost",
+        port=5672,
+        login="my_user",
+        password="my_password",
+        heartbeat=15,
+        loop=loop,
+    )
 
 
 @api.post("/classify", status_code=202)
@@ -32,16 +37,16 @@ async def classify(request: Request, body: QueryParams) -> PendingSummarizationD
     state = request.app.state
     inference_id = str(uuid.uuid4())
 
-    # with create_rabbitmq_client() as rabbitmq_client:
-    #     rabbitmq_client.basic_publish(
-    #         exchange="",  # default exchange
-    #         routing_key="summarizer_inference_queue",
-    #         body=json.dumps(body.dict()),
-    #         properties=pika.BasicProperties(
-    #             headers={"inference_id": inference_id}, delivery_mode=pika.spec.PERSISTENT_DELIVERY_MODE
-    #         ),
-    #     )
-    await state.publisher.add(body, inference_id)
+    channel = await state.rabbit_conn.channel()
+    queue = await channel.declare_queue(name="summarizer_inference_queue", durable=True)
+    await channel.default_exchange.publish(
+        aio_pika.Message(
+            body=json.dumps(body.dict()).encode("utf-8"),
+            headers={"inference_id": inference_id},
+            delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
+        ),
+        routing_key=queue.name,
+    )
     logger.info(f"added request to queue (uuid {inference_id})")
 
     return PendingSummarizationDTO(inference_id=inference_id)
