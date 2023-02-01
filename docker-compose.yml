@@ -1,7 +1,5 @@
 version: "3.8"
 services:
-  redis:
-    image: redis:latest
 
   rabbitmq:
     image: rabbitmq:3.10-management
@@ -14,6 +12,8 @@ services:
     restart: always
 
   summarizer:
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
     build: .
     environment:
       PROJECT_NAME: "zeroshot_summarizer"
@@ -22,11 +22,10 @@ services:
       - "8383:8000"
     command: bash start.sh
     links:
-      - redis
       - rabbitmq
     volumes:
       - ./models:/home/models
+      - ./huggingface_models:/root/.cache/huggingface/
     depends_on:
       - rabbitmq
-      - redis
     restart: on-failure

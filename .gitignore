@@ -130,3 +130,6 @@ dmypy.json
 
 # Torch models
 *.pth
+
+# docker folders
+huggingface_models/

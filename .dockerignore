@@ -1,3 +1,4 @@
 models/
 data/
 *.zip
+huggingface_models/

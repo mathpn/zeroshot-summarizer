@@ -1,15 +1,14 @@
 """
-Connection utils.
+RabbitMQ connection utils.
 """
 
 import pika
-import redis
+import aio_pika
 from pika import PlainCredentials
 
 
-# FIXME RabbitMQ connection is being lost in FastAPI
 def create_rabbitmq_client():
-    connection = pika.BlockingConnection(
+    rabbit_conn = pika.BlockingConnection(
         pika.ConnectionParameters(
             host="rabbitmq",
             # host="localhost",
@@ -18,11 +17,18 @@ def create_rabbitmq_client():
             heartbeat=15,
         )
     )
-    rabbitmq_client = connection.channel()
-    rabbitmq_client.queue_declare(queue="summarizer_inference_queue", durable=True)
-    return rabbitmq_client, connection
+    channel = rabbit_conn.channel()
+    return channel, rabbit_conn
 
 
-def create_redis_client():
-    return redis.Redis(host="redis", port=6379)
-    # return redis.Redis(host="localhost", port=6379)
+async def async_connect_rabbitmq(loop):
+    rabbit_conn = await aio_pika.connect(
+        host="rabbitmq",
+        # host="localhost",
+        port=5672,
+        login="my_user",
+        password="my_password",
+        heartbeat=15,
+        loop=loop,
+    )
+    return rabbit_conn

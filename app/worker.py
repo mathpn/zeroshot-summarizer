@@ -12,7 +12,7 @@ import torch
 from pika import BasicProperties
 from transformers import T5ForConditionalGeneration, T5Tokenizer
 
-from app.bridge import create_rabbitmq_client, create_redis_client
+from app.bridge import create_rabbitmq_client
 from app.logger import logger
 from app.model import create_inference
 
@@ -24,14 +24,18 @@ def callback(
     body: str,
     *,
     worker_id: int,
-    redis_client,
     inference_fn: Callable,
 ) -> None:
     kwargs = json.loads(body)
     result = inference_fn(**kwargs)
     logger.info(f"inference result (worker {worker_id}): {result}")
 
-    redis_client.set(properties.headers["inference_id"], result, ex=60)
+    channel.basic_publish(
+        exchange="",
+        routing_key=properties.reply_to,
+        properties=BasicProperties(headers=properties.headers),
+        body=result,
+    )
     channel.basic_ack(delivery_tag=method.delivery_tag)
 
 
@@ -40,17 +44,14 @@ class ThreadedConsumer(threading.Thread):
         self,
         worker_id: int,
         rabbitmq_creator: Callable,
-        redis_creator: Callable,
         inference_fn: Callable,
     ):
         super().__init__()
         self.worker_id = worker_id
         self.rabbitmq_client, *_ = rabbitmq_creator()
-        self.redis_client = redis_creator()
         self.callback = partial(
             callback,
             worker_id=worker_id,
-            redis_client=self.redis_client,
             inference_fn=inference_fn,
         )
         logger.debug(f"consumer worker {worker_id} ready")
@@ -76,7 +77,7 @@ def main():
 
     for i in range(args.n_workers):
         logger.info(f"launching consumer worker {i}")
-        consumer = ThreadedConsumer(i, create_rabbitmq_client, create_redis_client, inference)
+        consumer = ThreadedConsumer(i, create_rabbitmq_client, inference)
         consumer.start()
 
 
