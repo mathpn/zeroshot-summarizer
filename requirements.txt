@@ -7,3 +7,4 @@ transformers==4.25.1
 sentencepiece==0.1.97
 uvicorn==0.20.0
 aio_pika==8.3.0
+gradio==3.18.0
