@@ -2,8 +2,8 @@
 RabbitMQ connection utils.
 """
 
-import pika
 import aio_pika
+import pika
 from pika import PlainCredentials
 
 

@@ -3,12 +3,10 @@ Launch Gradio demo with the model.
 """
 
 import gradio as gr
-
 import torch
-from transformers import T5Tokenizer, T5ForConditionalGeneration
+from transformers import T5ForConditionalGeneration, T5Tokenizer
 
 from app.model import create_inference
-
 
 tokenizer = T5Tokenizer.from_pretrained("t5-small", model_max_length=512)
 model = T5ForConditionalGeneration.from_pretrained("t5-small")
