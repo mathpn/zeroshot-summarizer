@@ -27,10 +27,10 @@ def create_log_config(log_level: str):
             },
         },
         "loggers": {
-            "movie_recommender": {"handlers": ["default"], "level": log_level},
+            LOGGER_NAME: {"handlers": ["default"], "level": log_level},
         },
     }
 
 
 dictConfig(create_log_config(log_level="DEBUG" if os.environ.get("DEBUG") else "INFO"))
-logger = logging.getLogger("movie_recommender")
+logger = logging.getLogger(LOGGER_NAME)
