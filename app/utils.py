@@ -7,7 +7,7 @@ import time
 from functools import wraps
 from typing import Callable
 
-from app.logger import logger
+from src.logger import logger
 
 
 def timed(func) -> Callable:

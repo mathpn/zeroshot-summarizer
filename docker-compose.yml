@@ -14,18 +14,39 @@ services:
   summarizer:
     stdin_open: true # docker run -i
     tty: true        # docker run -t
-    build: .
+    build:
+      context: .
+      dockerfile: app/Dockerfile
     environment:
       PROJECT_NAME: "zeroshot_summarizer"
-      PYTHONPATH: .:app
+      PYTHONPATH: /home/
     ports:
       - "8383:8000"
-    command: bash start.sh
+    command: bash /home/app/start.sh
     links:
       - rabbitmq
     volumes:
       - ./models:/home/models
       - ./huggingface_models:/root/.cache/huggingface/
     depends_on:
+      - rabbitmq
+    restart: on-failure
+
+  consumer:
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    build:
+      context: .
+      dockerfile: consumer/Dockerfile
+    environment:
+      PYTHONPATH: /home/
+    command: bash /home/consumer/start.sh
+    links:
+      - rabbitmq
+    volumes:
+      - ./models:/home/models
+      - ./huggingface_models:/root/.cache/huggingface/
+    depends_on:
+      - summarizer
       - rabbitmq
     restart: on-failure

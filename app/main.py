@@ -10,8 +10,8 @@ from functools import partial
 import aio_pika
 from fastapi import FastAPI, Request
 
-from app.bridge import async_connect_rabbitmq
-from app.logger import logger
+from src.bridge import async_connect_rabbitmq
+from src.logger import logger
 from app.models import QueryParams, SummarizationResultDTO
 from app.utils import timed
 
