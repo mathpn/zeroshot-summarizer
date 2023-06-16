@@ -10,6 +10,12 @@ There will be an API (FastAPI) to receive inference requests, which will be adde
 docker-compose -f docker-compose-local.yml up
 ```
 
+## Rebuilding the Docker images
+
+```bash
+docker-compose rm && docker-compose -f docker-compose-local.yml up --build
+```
+
 # Building and running
 
 ```bash
