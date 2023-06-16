@@ -18,7 +18,7 @@ def timed(func) -> Callable:
             init = time.perf_counter()
             out = await func(*args, **kwargs)
             end = time.perf_counter() - init
-            logger.debug(f"{func.__name__} finished in {1000 * end:.2f} ms")
+            logger.debug("%s finished in %.2f ms", func.__name__, 1000 * end)
             return out
 
     else:
@@ -27,7 +27,7 @@ def timed(func) -> Callable:
             init = time.perf_counter()
             out = func(*args, **kwargs)
             end = time.perf_counter() - init
-            logger.debug(f"{func.__name__} finished in {1000 * end:.2f} ms")
+            logger.debug("%s finished in %.2f ms", func.__name__, 1000 * end)
             return out
 
     return timed_func

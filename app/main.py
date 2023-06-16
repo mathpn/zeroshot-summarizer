@@ -39,11 +39,12 @@ async def result_callback(message: aio_pika.abc.AbstractIncomingMessage, queue, 
     if message.headers["inference_id"] != inference_id:
         # TODO lazy formatting
         logger.warning(
-            f"message with different ID on exclusive queue: uuid = {message.headers['inference_id']}"
+            "message with different ID on exclusive queue: uuid = %s",
+            message.headers["inference_id"],
         )
         return
 
-    logger.debug(f"received result - uuid = {inference_id}")
+    logger.debug("received result - uuid = %s", inference_id)
     await queue.put(message)
     await message.ack()
 
@@ -66,12 +67,12 @@ async def classify(request: Request, body: QueryParams) -> SummarizationResultDT
         ),
         routing_key=state.queue.name,
     )
-    logger.info(f"added request to queue (uuid {inference_id})")
+    logger.info("added request to queue (uuid %s)", inference_id)
 
     callback = partial(result_callback, queue=out_queue, inference_id=inference_id)
     task = asyncio.create_task(result.consume(callback))
     out = await out_queue.get()
     task.cancel()
-    logger.info(f"received result (uuid {inference_id})")
+    logger.info("received result (uuid %s)", inference_id)
 
     return SummarizationResultDTO(summary=out.body.decode("utf-8"))

@@ -12,8 +12,6 @@ services:
     restart: always
 
   summarizer:
-    stdin_open: true # docker run -i
-    tty: true        # docker run -t
     build:
       context: .
       dockerfile: app/Dockerfile
@@ -36,8 +34,6 @@ services:
     restart: on-failure
 
   consumer:
-    stdin_open: true # docker run -i
-    tty: true        # docker run -t
     build:
       context: .
       dockerfile: consumer/Dockerfile
