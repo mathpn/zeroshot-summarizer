@@ -23,9 +23,12 @@ services:
       WAIT_HOSTS: rabbitmq:5672
     ports:
       - "8383:8000"
-    command: bash /home/app/start.sh
+    command: bash /home/app/start_dev.sh
     links:
       - rabbitmq
+    volumes:
+      - ./app:/home/app
+      - ./src:/home/src
     depends_on:
       - rabbitmq
     healthcheck:
@@ -50,6 +53,8 @@ services:
     volumes:
       - ./models:/home/models
       - ./huggingface_models:/root/.cache/huggingface/
+      - ./src:/home/src
+      - ./consumer:/home/consumer
     depends_on:
       - rabbitmq
       - summarizer

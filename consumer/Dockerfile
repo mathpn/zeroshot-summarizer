@@ -2,7 +2,9 @@ FROM python:3.11
 
 WORKDIR /home/
 
-ADD requirements.txt requirements.txt
+COPY --from=ghcr.io/ufoscout/docker-compose-wait:latest /wait /wait
+
+ADD consumer/requirements.txt requirements.txt
 ADD consumer ./consumer
 ADD src ./src
 

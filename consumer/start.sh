@@ -1,4 +1,4 @@
 #!/bin/bash
 
-sleep 10
+/wait
 exec python -m consumer.worker
