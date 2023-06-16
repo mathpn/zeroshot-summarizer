@@ -23,10 +23,21 @@ async def startup() -> None:
     loop = asyncio.get_event_loop()
     conn = await async_connect_rabbitmq(loop)
     api.state.rabbit_conn = conn
+    api.state.channel = await conn.channel()
+    await api.state.channel.set_qos(prefetch_count=1)
+    api.state.queue = await api.state.channel.declare_queue(
+        name="summarizer_inference_queue", durable=True
+    )
+
+
+@api.get("/health")
+async def health():
+    return "OK"
 
 
 async def result_callback(message: aio_pika.abc.AbstractIncomingMessage, queue, inference_id: str):
     if message.headers["inference_id"] != inference_id:
+        # TODO lazy formatting
         logger.warning(
             f"message with different ID on exclusive queue: uuid = {message.headers['inference_id']}"
         )
@@ -44,9 +55,7 @@ async def classify(request: Request, body: QueryParams) -> SummarizationResultDT
     inference_id = str(uuid.uuid4())
 
     out_queue = asyncio.Queue()
-    channel = await state.rabbit_conn.channel()
-    await channel.set_qos(prefetch_count=1)
-    queue = await channel.declare_queue(name="summarizer_inference_queue", durable=True)
+    channel = state.channel
     result = await channel.declare_queue(name=inference_id, exclusive=True, auto_delete=True)
     await channel.default_exchange.publish(
         aio_pika.Message(
@@ -55,7 +64,7 @@ async def classify(request: Request, body: QueryParams) -> SummarizationResultDT
             reply_to=result.name,
             delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
         ),
-        routing_key=queue.name,
+        routing_key=state.queue.name,
     )
     logger.info(f"added request to queue (uuid {inference_id})")
 
@@ -63,7 +72,6 @@ async def classify(request: Request, body: QueryParams) -> SummarizationResultDT
     task = asyncio.create_task(result.consume(callback))
     out = await out_queue.get()
     task.cancel()
-    await channel.close()
     logger.info(f"received result (uuid {inference_id})")
 
     return SummarizationResultDTO(summary=out.body.decode("utf-8"))

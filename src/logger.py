@@ -1,36 +1,22 @@
+"""
+Logger object
+"""
+
 import logging
-import os
-from logging.config import dictConfig
-
-LOGGER_NAME = "zeroshot_summarizer"
-LOG_FORMAT = "%(levelprefix)s | %(asctime)s | %(message)s"
+from os import environ
 
 
-def create_log_config(log_level: str):
-    """Logging configuration."""
-    return {
-        "logger_name": LOGGER_NAME,
-        "version": 1,
-        "disable_existing_loggers": False,
-        "formatters": {
-            "default": {
-                "()": "uvicorn.logging.DefaultFormatter",
-                "fmt": LOG_FORMAT,
-                "datefmt": "%Y-%m-%d %H:%M:%S",
-            },
-        },
-        "handlers": {
-            "default": {
-                "formatter": "default",
-                "class": "logging.StreamHandler",
-                "stream": "ext://sys.stderr",
-            },
-        },
-        "loggers": {
-            LOGGER_NAME: {"handlers": ["default"], "level": log_level},
-        },
-    }
+def setup_logger(name="zeroshot_summarizer", log_level: int = logging.INFO):
+    if log_level == logging.DEBUG:
+        format_str = (
+            "%(asctime)s | %(levelname)s |%(name)s - [%(module)s.%(funcName)s]: %(message)s"
+        )
+    else:
+        format_str = "%(asctime)s | %(levelname)s |%(name)s: %(message)s"
+    logging.basicConfig(format=format_str)
+    logger = logging.getLogger(name)
+    logger.setLevel(log_level)
+    return logger
 
 
-dictConfig(create_log_config(log_level="DEBUG" if os.environ.get("DEBUG") else "INFO"))
-logger = logging.getLogger(LOGGER_NAME)
+logger = setup_logger(log_level=logging.DEBUG if "DEBUG" in environ else logging.INFO)
