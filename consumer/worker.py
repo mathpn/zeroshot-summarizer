@@ -12,9 +12,9 @@ import torch
 from pika import BasicProperties
 from transformers import T5ForConditionalGeneration, T5Tokenizer
 
-from app.bridge import create_rabbitmq_client
-from app.logger import logger
-from app.model import create_inference
+from src.bridge import create_rabbitmq_client
+from src.logger import logger
+from consumer.model import create_inference
 
 
 def callback(
@@ -28,7 +28,7 @@ def callback(
 ) -> None:
     kwargs = json.loads(body)
     result = inference_fn(**kwargs)
-    logger.info(f"inference result (worker {worker_id}): {result}")
+    logger.info("inference result (worker %s): %s", worker_id, result)
 
     channel.basic_publish(
         exchange="",
@@ -54,7 +54,7 @@ class ThreadedConsumer(threading.Thread):
             worker_id=worker_id,
             inference_fn=inference_fn,
         )
-        logger.debug(f"consumer worker {worker_id} ready")
+        logger.debug("consumer worker %s ready", worker_id)
 
     def run(self):
         self.rabbitmq_client.basic_qos(prefetch_count=1)
@@ -62,7 +62,7 @@ class ThreadedConsumer(threading.Thread):
             queue="summarizer_inference_queue", on_message_callback=self.callback
         )
         self.rabbitmq_client.start_consuming()
-        logger.info(f"consumer worker {self.worker_id} - starting to consume")
+        logger.info("consumer worker %s - starting to consume", self.worker_id)
 
 
 def main():
@@ -76,7 +76,7 @@ def main():
     inference = create_inference(model, tokenizer)
 
     for i in range(args.n_workers):
-        logger.info(f"launching consumer worker {i}")
+        logger.info("launching consumer worker %s", i)
         consumer = ThreadedConsumer(i, create_rabbitmq_client, inference)
         consumer.start()
 
