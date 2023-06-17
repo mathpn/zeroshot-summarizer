@@ -10,22 +10,19 @@ def create_inference(model, tokenizer):
     model = model.eval()
 
     def inference(
-        sequence: str,
-        descriptors: list[str],
-        max_length: int = 20,
-        temperature: float = 1.0,
+        sequences: str,
         sample: bool = True,
     ):
-        desc_str = ", ".join(descriptors)
-        sequence = f"summarize {desc_str}: {sequence.strip().lower()}"
-        input_ids = tokenizer(sequence, return_tensors="pt").input_ids
+        # desc_str = ", ".join(descriptors)
+        # sequence = f"summarize {desc_str}: {sequence.strip().lower()}"
+        input_ids = tokenizer(sequences, return_tensors="pt").input_ids
         outputs = model.generate(
             input_ids,
-            temperature=temperature,
+            # temperature=temperature,
             do_sample=sample,
-            max_length=max_length,
+            # max_length=max_length,
         )
-        return tokenizer.decode(outputs[0], skip_special_tokens=True)
+        return [tokenizer.decode(x, skip_special_tokens=True) for x in outputs]
 
     return inference
 
@@ -33,7 +30,7 @@ def create_inference(model, tokenizer):
 if __name__ == "__main__":
     tokenizer = T5Tokenizer.from_pretrained("t5-small", model_max_length=512)
     model = T5ForConditionalGeneration.from_pretrained("t5-small")
-    # model.load_state_dict(torch.load("./t5_small_ft_22.pth", map_location="cpu"))
+    model.load_state_dict(torch.load("./models/t5_small_ft_22.pth", map_location="cpu"))
 
     inference = create_inference(model, tokenizer)
     out = inference(
