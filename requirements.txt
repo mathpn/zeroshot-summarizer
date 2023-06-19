@@ -8,3 +8,4 @@ sentencepiece==0.1.97
 uvicorn==0.20.0
 aio_pika==8.3.0
 gradio==3.18.0
+confluent_kafka==2.1.1
