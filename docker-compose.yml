@@ -64,13 +64,9 @@ services:
       PROJECT_NAME: "zeroshot_summarizer"
       PYTHONPATH: /home/
       WAIT_HOSTS: broker:9092, rabbitmq:5672
-      DEBUG: 1
     ports:
       - "8383:8000"
     command: bash /home/app/start_dev.sh
-    volumes:
-      - ./app:/home/app
-      - ./src:/home/src
     depends_on:
       - broker
       - zookeeper
@@ -92,13 +88,10 @@ services:
       PYTHONPATH: /home/
       WAIT_HOSTS: broker:9092, rabbitmq:5672, summarizer:8000
       OMP_NUM_THREADS: 8
-      DEBUG: 1
     command: bash /home/consumer/start.sh 2
     volumes:
       - ./models:/home/models
       - ./huggingface_models:/root/.cache/huggingface/
-      - ./src:/home/src
-      - ./consumer:/home/consumer
     depends_on:
       - broker
       - summarizer

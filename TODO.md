@@ -1,5 +1,5 @@
 # TODO
 
 [x] move consumers to a separate service
-[ ] implement dynamic batching
+[x] implement dynamic batching
 [ ] document in README

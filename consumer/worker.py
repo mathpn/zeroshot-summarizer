@@ -1,19 +1,11 @@
-
 import argparse
-import asyncio
 import json
-import queue
-import sys
-import threading
-import time
-from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
-from functools import partial
 from threading import Thread
 from typing import Any, Callable
 
 import torch
-from confluent_kafka import OFFSET_BEGINNING, Consumer
+from confluent_kafka import Consumer
 from pika import BasicProperties
 from transformers import T5ForConditionalGeneration, T5Tokenizer
 
@@ -65,7 +57,6 @@ class InferenceConsumer(Thread):
             logger.debug("worker %s batch size %s", self.worker_id, len(batch))
             results = self.inference_fn(batch)
             for result in results:
-                print(f"{self.worker_id} ---> {result}")
                 self.publish(result)
 
     def stop(self):
@@ -82,7 +73,7 @@ class InferenceConsumer(Thread):
 def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--n-workers", type=int, default=2, help="number of consumer workers.")
-    parser.add_argument("--config-file", type=FileType("r"))
+    parser.add_argument("--config-file", type=argparse.FileType("r"))
     args = parser.parse_args()
 
     # Parse the configuration.
@@ -91,17 +82,25 @@ def main():
     config_parser.read_file(args.config_file)
     config = dict(config_parser["default"])
     config.update(config_parser["consumer"])
-    print(config)
+    logger.debug("Kafka Consumer config: %s", config)
 
     tokenizer = T5Tokenizer.from_pretrained("t5-small", model_max_length=512)
     model = T5ForConditionalGeneration.from_pretrained("t5-small")
     model.load_state_dict(torch.load("/home/models/t5_small_ft_22.pth", map_location="cpu"))
     inference = create_inference(model, tokenizer)
 
-    for i in range(args.n_workers):
-        logger.info("launching consumer worker %s", i)
-        consumer = InferenceConsumer(i, config, "inference_queue", inference)
-        consumer.start()
+    consumers = [
+        InferenceConsumer(i, config, "inference_queue", inference) for i in range(args.n_workers)
+    ]
+    try:
+        for consumer in consumers:
+            logger.info("launching consumer worker %s", consumer.worker_id)
+            consumer.start()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        for consumer in consumers:
+            consumer.join()
 
 
 if __name__ == "__main__":

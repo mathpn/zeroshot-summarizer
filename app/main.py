@@ -9,6 +9,7 @@ from functools import partial
 
 import aio_pika
 from fastapi import FastAPI, Request
+from fastapi.exceptions import HTTPException
 
 from app.models import QueryParams, SummarizationResultDTO
 from app.producer import AIOProducer
@@ -54,7 +55,7 @@ async def result_callback(message: aio_pika.abc.AbstractIncomingMessage, queue, 
 
 @app.post("/summarize", status_code=200)
 @timed
-async def classify(request: Request, body: QueryParams) -> SummarizationResultDTO:
+async def summarize(request: Request, body: QueryParams) -> SummarizationResultDTO:
     state = request.app.state
     inference_id = str(uuid.uuid4())
 
@@ -63,13 +64,14 @@ async def classify(request: Request, body: QueryParams) -> SummarizationResultDT
     result = await channel.declare_queue(name=inference_id, exclusive=True, auto_delete=True)
     body = json.dumps(body.dict())
     res = await state.producer.produce("inference_queue", body, inference_id)
-    # TODO handle res
-    logger.info("added request to queue (uuid %s)", inference_id)
+    err = res.error()
+    if err is not None:
+        raise HTTPException(status_code=500, detail=f"Kafka Producer failed: {err}")
 
+    logger.info("added request to queue (uuid %s)", inference_id)
     callback = partial(result_callback, queue=out_queue, inference_id=inference_id)
     task = asyncio.create_task(result.consume(callback))
     out = await out_queue.get()
     task.cancel()
-    logger.info("received result (uuid %s)", inference_id)
 
     return SummarizationResultDTO(summary=out.body.decode("utf-8"))

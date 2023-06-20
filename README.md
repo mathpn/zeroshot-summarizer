@@ -16,8 +16,14 @@ docker-compose -f docker-compose-local.yml up
 docker-compose rm && docker-compose -f docker-compose-local.yml up --build
 ```
 
-# Building and running
+# Building and running (production mode)
 
 ```bash
-docker-compose rm && docker-compose -f docker-compose.yml up --build -d && docker-compose logs --tail 100 -f
+docker-compose rm && docker-compose up --build
+```
+
+# Running (production mode)
+
+```bash
+docker-compose up
 ```

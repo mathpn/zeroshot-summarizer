@@ -31,18 +31,17 @@ def create_inference(model, tokenizer):
         sample: bool = True,
     ) -> list[InferenceResult]:
         sequences = [query.sequence for query in queries]
-        # TODO check max len
         input_ids = tokenizer(
             sequences, return_tensors="pt", padding=True, truncation=True
         ).input_ids
-        outputs = model.generate(input_ids, do_sample=sample)
+        outputs = model.generate(input_ids, do_sample=sample, max_new_tokens=25)
         outputs = tokenizer.batch_decode(outputs, skip_special_tokens=True)
         return [InferenceResult(query.inference_id, outputs[i]) for i, query in enumerate(queries)]
 
     return inference
 
 
-if __name__ == "__main__":
+def main():
     tokenizer = T5Tokenizer.from_pretrained("t5-small", model_max_length=512)
     model = T5ForConditionalGeneration.from_pretrained("t5-small")
     model.load_state_dict(torch.load("./models/t5_small_ft_22.pth", map_location="cpu"))
@@ -54,3 +53,7 @@ if __name__ == "__main__":
     )
     out = inference([query])
     print(out)
+
+
+if __name__ == "__main__":
+    main()
