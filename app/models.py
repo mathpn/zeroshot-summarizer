@@ -19,7 +19,6 @@ class SummarizationResultDTO(BaseModel):
 class QueryParams(BaseModel):
     sequence: str
     descriptors: list[str]
-    max_length: int = 20
-    temperature: float = 0.1
+
     def __post_init__(self):
         self.inference_id = str(uuid.uuid4())
